@@ -105,9 +105,15 @@ public class PathTrie<T> {
             if (isNamedWildcard(token)) {
                 key = WILDCARD;
             }
-
+            // PathTrie 初始情况下，children 是不可变 map
             TrieNode node = children.get(key);
             if (node == null) {
+                /*
+                 * 如果 trie 树中没有对应的节点，则创建一个节点，加入到 trie 中
+                 * 如果是拆分路径最后一项，则插入的值是节点的值
+                 * 否则，是空值
+                 * 然后创建一个对应的节点，加入到 trie 中
+                 * */
                 T nodeValue = index == path.length - 1 ? value : null;
                 node = new TrieNode(token, nodeValue);
                 addInnerChild(key, node);
@@ -276,11 +282,13 @@ public class PathTrie<T> {
     }
 
     public void insert(String path, T value) {
+        // 拆分路径
         String[] strings = path.split(SEPARATOR);
         if (strings.length == 0) {
             if (rootValue != null) {
                 throw new IllegalArgumentException("Path [/] already has a value [" + rootValue + "]");
             }
+            // 根节点值
             rootValue = value;
             return;
         }
