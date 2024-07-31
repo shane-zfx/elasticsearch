@@ -31,6 +31,7 @@ import java.nio.file.Path;
  * @param configDir the directory where {@code elasticsearch.yml} and other config exists
  * @param logsDir the directory where log files should be written
  */
+// record：不可变类的语法糖，其内属性不可变
 public record ServerArgs(
     boolean daemonize,
     boolean quiet,
@@ -61,6 +62,7 @@ public record ServerArgs(
      */
     public ServerArgs(StreamInput in) throws IOException {
         this(
+            // 从输入流中读取一个字节
             in.readBoolean(),
             in.readBoolean(),
             readPidFile(in),

@@ -65,7 +65,7 @@ class Elasticsearch {
      * Main entry point for starting elasticsearch.
      */
     public static void main(final String[] args) {
-
+        // 引导程序
         Bootstrap bootstrap = initPhase1();
         assert bootstrap != null;
 
@@ -102,6 +102,7 @@ class Elasticsearch {
         final PrintStream err = getStderr();
         final ServerArgs args;
         try {
+            // 安全设置，暂时忽略
             initSecurityProperties();
 
             /*
@@ -115,12 +116,15 @@ class Elasticsearch {
                     // grant all permissions so that we can later set the security manager to the one that we want
                 }
             });
+            // 错误日志记录，暂时忽略
             LogConfigurator.registerErrorListener();
-
+            // 初始化默认设置，BootstrapInfo 内部均为类信息，意味着全局可用
             BootstrapInfo.init();
 
+            // 键盘标准输入
             // note that reading server args does *not* close System.in, as it will be read from later for shutdown notification
             var in = new InputStreamStreamInput(System.in);
+            // 通过标准输入构造服务基础的参数
             args = new ServerArgs(in);
 
             // mostly just paths are used in phase 1, so secure settings are not needed
