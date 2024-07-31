@@ -234,6 +234,7 @@ import static org.elasticsearch.core.Types.forciblyCast;
  * Separating out this logic into a dedicated class is a lot clearer and more flexible than
  * doing all this logic inside a constructor in {@link Node}.
  */
+// 被拆分出来的一些用于构造es节点的复杂操作
 class NodeConstruction {
 
     /**
