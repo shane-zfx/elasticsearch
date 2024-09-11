@@ -26,12 +26,12 @@ import org.elasticsearch.cluster.coordination.StatefulPreVoteCollector;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
+import org.elasticsearch.injection.guice.Inject;
 import org.elasticsearch.plugins.ActionPlugin;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.tasks.Task;
@@ -79,7 +79,13 @@ public class TransportMasterNodeActionIT extends ESIntegTestCase {
 
         try {
             final var newMaster = ensureSufficientMasterEligibleNodes();
-            final long originalTerm = internalCluster().masterClient().admin().cluster().prepareState().get().getState().term();
+            final long originalTerm = internalCluster().masterClient()
+                .admin()
+                .cluster()
+                .prepareState(TEST_REQUEST_TIMEOUT)
+                .get()
+                .getState()
+                .term();
             final var previousMasterKnowsNewMasterIsElectedLatch = configureElectionLatch(newMaster, cleanupTasks);
 
             final var newMasterReceivedReroutedMessageFuture = new PlainActionFuture<>();

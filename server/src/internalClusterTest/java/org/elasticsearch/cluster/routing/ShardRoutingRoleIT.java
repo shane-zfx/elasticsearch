@@ -296,7 +296,7 @@ public class ShardRoutingRoleIT extends ESIntegTestCase {
 
             createIndex(INDEX_NAME, routingTableWatcher.getIndexSettings());
 
-            final var clusterState = clusterAdmin().prepareState().clear().setRoutingTable(true).get().getState();
+            final var clusterState = clusterAdmin().prepareState(TEST_REQUEST_TIMEOUT).clear().setRoutingTable(true).get().getState();
 
             // verify non-DEFAULT roles reported in cluster state XContent
             assertRolesInRoutingTableXContent(clusterState);
@@ -440,7 +440,7 @@ public class ShardRoutingRoleIT extends ESIntegTestCase {
 
     @Nullable
     public AllocationCommand getCancelPrimaryCommand() {
-        final var indexRoutingTable = clusterAdmin().prepareState()
+        final var indexRoutingTable = clusterAdmin().prepareState(TEST_REQUEST_TIMEOUT)
             .clear()
             .setRoutingTable(true)
             .get()
@@ -488,7 +488,7 @@ public class ShardRoutingRoleIT extends ESIntegTestCase {
             assertEngineTypes();
 
             final var searchShardProfileKeys = new HashSet<String>();
-            final var indexRoutingTable = clusterAdmin().prepareState()
+            final var indexRoutingTable = clusterAdmin().prepareState(TEST_REQUEST_TIMEOUT)
                 .clear()
                 .setRoutingTable(true)
                 .get()
@@ -550,7 +550,7 @@ public class ShardRoutingRoleIT extends ESIntegTestCase {
             }
             // search-shards API
             for (int i = 0; i < 10; i++) {
-                final var search = new ClusterSearchShardsRequest(INDEX_NAME);
+                final var search = new ClusterSearchShardsRequest(TEST_REQUEST_TIMEOUT, INDEX_NAME);
                 switch (randomIntBetween(0, 2)) {
                     case 0 -> search.routing(randomAlphaOfLength(10));
                     case 1 -> search.routing(randomSearchPreference(routingTableWatcher.numShards, internalCluster().getNodeNames()));

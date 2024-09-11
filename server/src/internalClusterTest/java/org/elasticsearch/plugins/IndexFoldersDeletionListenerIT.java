@@ -73,7 +73,7 @@ public class IndexFoldersDeletionListenerIT extends ESIntegTestCase {
 
         final NumShards numShards = getNumShards(indexName);
         assertFalse(
-            clusterAdmin().prepareHealth()
+            clusterAdmin().prepareHealth(TEST_REQUEST_TIMEOUT)
                 .setIndices(indexName)
                 .setWaitForGreenStatus()
                 .setWaitForEvents(Priority.LANGUID)
@@ -140,7 +140,7 @@ public class IndexFoldersDeletionListenerIT extends ESIntegTestCase {
 
         final NumShards numShards = getNumShards(indexName);
         assertFalse(
-            clusterAdmin().prepareHealth()
+            clusterAdmin().prepareHealth(TEST_REQUEST_TIMEOUT)
                 .setIndices(indexName)
                 .setWaitForGreenStatus()
                 .setWaitForEvents(Priority.LANGUID)
@@ -206,7 +206,7 @@ public class IndexFoldersDeletionListenerIT extends ESIntegTestCase {
 
         final NumShards numShards = getNumShards(indexName);
         assertFalse(
-            clusterAdmin().prepareHealth()
+            clusterAdmin().prepareHealth(TEST_REQUEST_TIMEOUT)
                 .setIndices(indexName)
                 .setWaitForGreenStatus()
                 .setWaitForEvents(Priority.LANGUID)
@@ -350,7 +350,7 @@ public class IndexFoldersDeletionListenerIT extends ESIntegTestCase {
 
                 @Override
                 public void beforeShardFoldersDeleted(ShardId shardId, IndexSettings indexSettings, Path[] shardPaths) {
-                    deletedShards.computeIfAbsent(shardId.getIndex(), i -> new ArrayList<>()).add(shardId);
+                    deletedShards.computeIfAbsent(shardId.getIndex(), i -> Collections.synchronizedList(new ArrayList<>())).add(shardId);
                 }
             });
         }

@@ -30,7 +30,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
@@ -183,10 +182,10 @@ public class DateFieldMapperTests extends MapperTestCase {
 
     public void testChangeLocale() throws IOException {
         DocumentMapper mapper = createDocumentMapper(
-            fieldMapping(b -> b.field("type", "date").field("format", "E, d MMM yyyy HH:mm:ss Z").field("locale", "de"))
+            fieldMapping(b -> b.field("type", "date").field("format", "E, d MMM yyyy HH:mm:ss Z").field("locale", "fr"))
         );
 
-        mapper.parse(source(b -> b.field("field", "Mi, 06 Dez 2000 02:55:00 -0800")));
+        mapper.parse(source(b -> b.field("field", "mer., 6 déc. 2000 02:55:00 -0800")));
     }
 
     public void testNullValue() throws IOException {
@@ -675,20 +674,7 @@ public class DateFieldMapperTests extends MapperTestCase {
 
             @Override
             public List<SyntheticSourceInvalidExample> invalidExample() throws IOException {
-                List<SyntheticSourceInvalidExample> examples = new ArrayList<>();
-                for (String fieldType : new String[] { "date", "date_nanos" }) {
-                    examples.add(
-                        new SyntheticSourceInvalidExample(
-                            equalTo(
-                                "field [field] of type ["
-                                    + fieldType
-                                    + "] doesn't support synthetic source because it doesn't have doc values"
-                            ),
-                            b -> b.field("type", fieldType).field("doc_values", false)
-                        )
-                    );
-                }
-                return examples;
+                return List.of();
             }
         };
     }
@@ -731,7 +717,18 @@ public class DateFieldMapperTests extends MapperTestCase {
 
     @Override
     protected Function<Object, Object> loadBlockExpected() {
-        return v -> ((Number) v).longValue();
+        return v -> asJacksonNumberOutput(((Number) v).longValue());
+    }
+
+    protected static Object asJacksonNumberOutput(long l) {
+        // If a long value fits in int, Jackson will write it as int in NumberOutput.outputLong()
+        // and we hit this during serialization of expected values.
+        // Code below mimics that behaviour in order for matching to work.
+        if (l < 0 && l >= Integer.MIN_VALUE || l >= 0 && l <= Integer.MAX_VALUE) {
+            return (int) l;
+        } else {
+            return l;
+        }
     }
 
     public void testLegacyField() throws Exception {

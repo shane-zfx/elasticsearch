@@ -640,7 +640,10 @@ public class DownsampleActionSingleNodeTests extends ESSingleNodeTestCase {
         downsample(sourceIndex, downsampleIndex, config);
         assertDownsampleIndex(sourceIndex, downsampleIndex, config);
 
-        var r = client().execute(GetDataStreamAction.INSTANCE, new GetDataStreamAction.Request(new String[] { dataStreamName })).get();
+        var r = client().execute(
+            GetDataStreamAction.INSTANCE,
+            new GetDataStreamAction.Request(TEST_REQUEST_TIMEOUT, new String[] { dataStreamName })
+        ).get();
         assertEquals(1, r.getDataStreams().size());
         List<Index> indices = r.getDataStreams().get(0).getDataStream().getIndices();
         // Assert that the downsample index has not been added to the data stream
@@ -1173,7 +1176,11 @@ public class DownsampleActionSingleNodeTests extends ESSingleNodeTestCase {
             .map(mappingMetadata -> mappingMetadata.getValue().sourceAsMap())
             .orElseThrow(() -> new IllegalArgumentException("No mapping found for downsample source index [" + sourceIndex + "]"));
 
-        final IndexMetadata indexMetadata = clusterAdmin().prepareState().get().getState().getMetadata().index(sourceIndex);
+        final IndexMetadata indexMetadata = clusterAdmin().prepareState(TEST_REQUEST_TIMEOUT)
+            .get()
+            .getState()
+            .getMetadata()
+            .index(sourceIndex);
         final IndicesService indicesService = getInstanceFromNode(IndicesService.class);
         final MapperService mapperService = indicesService.createIndexMapperServiceForValidation(indexMetadata);
         final CompressedXContent sourceIndexCompressedXContent = new CompressedXContent(sourceIndexMappings);
@@ -1584,7 +1591,12 @@ public class DownsampleActionSingleNodeTests extends ESSingleNodeTestCase {
             dataStreamName + "_template"
         ).indexTemplate(template);
         assertAcked(client().execute(TransportPutComposableIndexTemplateAction.TYPE, request).actionGet());
-        assertAcked(client().execute(CreateDataStreamAction.INSTANCE, new CreateDataStreamAction.Request(dataStreamName)).get());
+        assertAcked(
+            client().execute(
+                CreateDataStreamAction.INSTANCE,
+                new CreateDataStreamAction.Request(TEST_REQUEST_TIMEOUT, TEST_REQUEST_TIMEOUT, dataStreamName)
+            ).get()
+        );
         return dataStreamName;
     }
 

@@ -131,7 +131,10 @@ public class DataStreamsStatsTests extends ESSingleNodeTestCase {
         assertTrue(indicesAdmin().close(new CloseIndexRequest(".ds-" + dataStreamName + "-*-000001")).actionGet().isAcknowledged());
 
         assertBusy(
-            () -> assertNotEquals(ClusterHealthStatus.RED, clusterAdmin().health(new ClusterHealthRequest()).actionGet().getStatus())
+            () -> assertNotEquals(
+                ClusterHealthStatus.RED,
+                clusterAdmin().health(new ClusterHealthRequest(TEST_REQUEST_TIMEOUT)).actionGet().getStatus()
+            )
         );
 
         DataStreamsStatsAction.Response stats = getDataStreamsStats();
@@ -236,7 +239,12 @@ public class DataStreamsStatsTests extends ESSingleNodeTestCase {
                 new TransportPutComposableIndexTemplateAction.Request(dataStreamName + "_template").indexTemplate(template)
             )
         );
-        assertAcked(client().execute(CreateDataStreamAction.INSTANCE, new CreateDataStreamAction.Request(dataStreamName)));
+        assertAcked(
+            client().execute(
+                CreateDataStreamAction.INSTANCE,
+                new CreateDataStreamAction.Request(TEST_REQUEST_TIMEOUT, TEST_REQUEST_TIMEOUT, dataStreamName)
+            )
+        );
         createdDataStreams.add(dataStreamName);
         return dataStreamName;
     }
@@ -277,7 +285,12 @@ public class DataStreamsStatsTests extends ESSingleNodeTestCase {
     }
 
     private void deleteDataStream(String dataStreamName) {
-        assertAcked(client().execute(DeleteDataStreamAction.INSTANCE, new DeleteDataStreamAction.Request(new String[] { dataStreamName })));
+        assertAcked(
+            client().execute(
+                DeleteDataStreamAction.INSTANCE,
+                new DeleteDataStreamAction.Request(TEST_REQUEST_TIMEOUT, new String[] { dataStreamName })
+            )
+        );
         assertAcked(
             client().execute(
                 TransportDeleteComposableIndexTemplateAction.TYPE,

@@ -9,7 +9,6 @@
 package org.elasticsearch.action.admin.cluster.desirednodes;
 
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.support.ActionFilters;
@@ -25,10 +24,11 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.cluster.service.MasterServiceTaskQueue;
 import org.elasticsearch.common.Priority;
-import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
+import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.core.Tuple;
+import org.elasticsearch.injection.guice.Inject;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
@@ -102,17 +102,12 @@ public class TransportDeleteDesiredNodesAction extends TransportMasterNodeAction
     }
 
     public static class Request extends AcknowledgedRequest<Request> {
-        public Request() {
-            super(TRAPPY_IMPLICIT_DEFAULT_MASTER_NODE_TIMEOUT, DEFAULT_ACK_TIMEOUT);
+        public Request(TimeValue masterNodeTimeout, TimeValue ackTimeout) {
+            super(masterNodeTimeout, ackTimeout);
         }
 
         public Request(StreamInput in) throws IOException {
             super(in);
-        }
-
-        @Override
-        public ActionRequestValidationException validate() {
-            return null;
         }
     }
 }

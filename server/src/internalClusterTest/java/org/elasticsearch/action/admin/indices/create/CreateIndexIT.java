@@ -90,7 +90,7 @@ public class CreateIndexIT extends ESIntegTestCase {
         long timeBeforeRequest = System.currentTimeMillis();
         prepareCreate("test").get();
         long timeAfterRequest = System.currentTimeMillis();
-        ClusterStateResponse response = clusterAdmin().prepareState().get();
+        ClusterStateResponse response = clusterAdmin().prepareState(TEST_REQUEST_TIMEOUT).get();
         ClusterState state = response.getState();
         assertThat(state, notNullValue());
         Metadata metadata = state.getMetadata();
@@ -296,7 +296,7 @@ public class CreateIndexIT extends ESIntegTestCase {
     }
 
     public void testRestartIndexCreationAfterFullClusterRestart() throws Exception {
-        clusterAdmin().prepareUpdateSettings()
+        clusterAdmin().prepareUpdateSettings(TEST_REQUEST_TIMEOUT, TEST_REQUEST_TIMEOUT)
             .setTransientSettings(Settings.builder().put("cluster.routing.allocation.enable", "none"))
             .get();
         indicesAdmin().prepareCreate("test").setWaitForActiveShards(ActiveShardCount.NONE).setSettings(indexSettings()).get();
@@ -306,10 +306,7 @@ public class CreateIndexIT extends ESIntegTestCase {
 
     public void testFailureToCreateIndexCleansUpIndicesService() {
         final int numReplicas = internalCluster().numDataNodes();
-        Settings settings = Settings.builder()
-            .put(IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), 1)
-            .put(IndexMetadata.INDEX_NUMBER_OF_REPLICAS_SETTING.getKey(), numReplicas)
-            .build();
+        Settings settings = indexSettings(1, numReplicas).build();
         assertAcked(indicesAdmin().prepareCreate("test-idx-1").setSettings(settings).addAlias(new Alias("alias1").writeIndex(true)).get());
 
         ActionRequestBuilder<?, ?> builder = indicesAdmin().prepareCreate("test-idx-2")
@@ -328,10 +325,7 @@ public class CreateIndexIT extends ESIntegTestCase {
      */
     public void testDefaultWaitForActiveShardsUsesIndexSetting() throws Exception {
         final int numReplicas = internalCluster().numDataNodes();
-        Settings settings = Settings.builder()
-            .put(SETTING_WAIT_FOR_ACTIVE_SHARDS.getKey(), Integer.toString(numReplicas))
-            .put(IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), 1)
-            .put(IndexMetadata.INDEX_NUMBER_OF_REPLICAS_SETTING.getKey(), numReplicas)
+        Settings settings = indexSettings(1, numReplicas).put(SETTING_WAIT_FOR_ACTIVE_SHARDS.getKey(), Integer.toString(numReplicas))
             .build();
         assertAcked(indicesAdmin().prepareCreate("test-idx-1").setSettings(settings).get());
 

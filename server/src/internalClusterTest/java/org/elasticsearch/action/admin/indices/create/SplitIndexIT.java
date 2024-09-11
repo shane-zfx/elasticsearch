@@ -276,6 +276,7 @@ public class SplitIndexIT extends ESIntegTestCase {
                 .put(indexSettings())
                 .put("number_of_shards", numberOfShards)
                 .put("index.number_of_routing_shards", numberOfTargetShards)
+                .put("index.routing.rebalance.enable", EnableAllocationDecider.Rebalance.NONE)
         ).get();
         ensureGreen(TimeValue.timeValueSeconds(120)); // needs more than the default to allocate many shards
 
@@ -332,7 +333,10 @@ public class SplitIndexIT extends ESIntegTestCase {
     }
 
     private static IndexMetadata indexMetadata(final Client client, final String index) {
-        final ClusterStateResponse clusterStateResponse = client.admin().cluster().state(new ClusterStateRequest()).actionGet();
+        final ClusterStateResponse clusterStateResponse = client.admin()
+            .cluster()
+            .state(new ClusterStateRequest(TEST_REQUEST_TIMEOUT))
+            .actionGet();
         return clusterStateResponse.getState().metadata().index(index);
     }
 
@@ -370,7 +374,7 @@ public class SplitIndexIT extends ESIntegTestCase {
             ensureGreen();
             assertNoResizeSourceIndexSettings("target");
 
-            final ClusterState state = clusterAdmin().prepareState().get().getState();
+            final ClusterState state = clusterAdmin().prepareState(TEST_REQUEST_TIMEOUT).get().getState();
             DiscoveryNode mergeNode = state.nodes().get(state.getRoutingTable().index("target").shard(0).primaryShard().currentNodeId());
             logger.info("split node {}", mergeNode);
 

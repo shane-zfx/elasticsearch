@@ -29,7 +29,6 @@ import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ClusterStateUpdateTask;
-import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.NodesShutdownMetadata;
 import org.elasticsearch.cluster.metadata.SingleNodeShutdownMetadata;
 import org.elasticsearch.cluster.node.DiscoveryNode;
@@ -90,7 +89,12 @@ import static org.hamcrest.Matchers.notNullValue;
 public class SnapshotStressTestsIT extends AbstractSnapshotIntegTestCase {
 
     public void testRandomActivities() throws InterruptedException {
-        final DiscoveryNodes discoveryNodes = clusterAdmin().prepareState().clear().setNodes(true).get().getState().nodes();
+        final DiscoveryNodes discoveryNodes = clusterAdmin().prepareState(TEST_REQUEST_TIMEOUT)
+            .clear()
+            .setNodes(true)
+            .get()
+            .getState()
+            .nodes();
         new TrackedCluster(internalCluster(), nodeNames(discoveryNodes.getMasterNodes()), nodeNames(discoveryNodes.getDataNodes())).run();
         disableRepoConsistencyCheck("have not necessarily written to all repositories");
     }
@@ -355,14 +359,20 @@ public class SnapshotStressTestsIT extends AbstractSnapshotIntegTestCase {
 
             if (failedPermitAcquisitions.isEmpty() == false) {
                 logger.warn("--> failed to acquire all permits: {}", failedPermitAcquisitions);
-                logger.info("--> current cluster state:\n{}", Strings.toString(clusterAdmin().prepareState().get().getState(), true, true));
+                logger.info(
+                    "--> current cluster state:\n{}",
+                    Strings.toString(clusterAdmin().prepareState(TEST_REQUEST_TIMEOUT).get().getState(), true, true)
+                );
                 fail("failed to acquire all permits: " + failedPermitAcquisitions);
             }
             logger.info("--> acquired all permits");
 
             if (ThreadPool.terminate(threadPool, 30, TimeUnit.SECONDS) == false) {
                 logger.warn("--> threadpool termination timed out");
-                logger.info("--> current cluster state:\n{}", Strings.toString(clusterAdmin().prepareState().get().getState(), true, true));
+                logger.info(
+                    "--> current cluster state:\n{}",
+                    Strings.toString(clusterAdmin().prepareState(TEST_REQUEST_TIMEOUT).get().getState(), true, true)
+                );
             }
         }
 
@@ -382,7 +392,7 @@ public class SnapshotStressTestsIT extends AbstractSnapshotIntegTestCase {
                         logger.warn("--> failed to acquire permit [{}]", label);
                         logger.info(
                             "--> current cluster state:\n{}",
-                            Strings.toString(clusterAdmin().prepareState().get().getState(), true, true)
+                            Strings.toString(clusterAdmin().prepareState(TEST_REQUEST_TIMEOUT).get().getState(), true, true)
                         );
                         HotThreads.logLocalHotThreads(
                             logger,
@@ -1461,11 +1471,7 @@ public class SnapshotStressTestsIT extends AbstractSnapshotIntegTestCase {
                 docPermits = new Semaphore(between(1000, 3000));
                 logger.info("--> create index [{}] with max [{}] docs", indexName, docPermits.availablePermits());
                 indicesAdmin().prepareCreate(indexName)
-                    .setSettings(
-                        Settings.builder()
-                            .put(IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), shardCount)
-                            .put(IndexMetadata.INDEX_NUMBER_OF_REPLICAS_SETTING.getKey(), between(0, cluster.numDataNodes() - 1))
-                    )
+                    .setSettings(indexSettings(shardCount, between(0, cluster.numDataNodes() - 1)))
                     .execute(mustSucceed(response -> {
                         assertTrue(response.isAcknowledged());
                         logger.info("--> finished create index [{}]", indexName);
@@ -1609,7 +1615,7 @@ public class SnapshotStressTestsIT extends AbstractSnapshotIntegTestCase {
     // Prepares a health request with twice the default (30s) timeout that waits for all cluster tasks to finish as well as all cluster
     // nodes before returning
     private static ClusterHealthRequestBuilder prepareClusterHealthRequest(String... targetIndexNames) {
-        return clusterAdmin().prepareHealth(targetIndexNames)
+        return clusterAdmin().prepareHealth(TEST_REQUEST_TIMEOUT, targetIndexNames)
             .setTimeout(TimeValue.timeValueSeconds(60))
             .setWaitForNodes(Integer.toString(internalCluster().getNodeNames().length))
             .setWaitForEvents(Priority.LANGUID);

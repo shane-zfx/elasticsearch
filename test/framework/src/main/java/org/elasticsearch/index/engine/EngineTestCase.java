@@ -99,7 +99,6 @@ import org.elasticsearch.index.translog.TranslogConfig;
 import org.elasticsearch.index.translog.TranslogDeletionPolicy;
 import org.elasticsearch.indices.breaker.CircuitBreakerService;
 import org.elasticsearch.indices.breaker.NoneCircuitBreakerService;
-import org.elasticsearch.plugins.internal.DocumentSizeObserver;
 import org.elasticsearch.test.DummyShardLock;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.IndexSettingsModule;
@@ -429,7 +428,7 @@ public abstract class EngineTestCase extends ESTestCase {
             source,
             XContentType.JSON,
             mappingUpdate,
-            DocumentSizeObserver.EMPTY_INSTANCE
+            ParsedDocument.DocumentSize.UNKNOWN
         );
     }
 
@@ -1401,12 +1400,7 @@ public abstract class EngineTestCase extends ESTestCase {
 
     public static MapperService createMapperService() throws IOException {
         IndexMetadata indexMetadata = IndexMetadata.builder("test")
-            .settings(
-                Settings.builder()
-                    .put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current())
-                    .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                    .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)
-            )
+            .settings(indexSettings(1, 1).put(IndexMetadata.SETTING_VERSION_CREATED, IndexVersion.current()))
             .putMapping("{\"properties\": {}}")
             .build();
         MapperService mapperService = MapperTestUtils.newMapperService(
@@ -1446,10 +1440,10 @@ public abstract class EngineTestCase extends ESTestCase {
         assertBusy(() -> assertThat(engine.getLocalCheckpointTracker().getProcessedCheckpoint(), greaterThanOrEqualTo(seqNo)));
     }
 
-    public static boolean hasAcquiredIndexCommits(Engine engine) {
+    public static boolean hasAcquiredIndexCommitsForTesting(Engine engine) {
         assert engine instanceof InternalEngine : "only InternalEngines have snapshotted commits, got: " + engine.getClass();
         InternalEngine internalEngine = (InternalEngine) engine;
-        return internalEngine.hasAcquiredIndexCommits();
+        return internalEngine.hasAcquiredIndexCommitsForTesting();
     }
 
     public static final class PrimaryTermSupplier implements LongSupplier {
